@@ -1,0 +1,51 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jarvis 3.0.1 Dashboard</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Jarvis 3.0.1 Control Panel</h1>
+            <div class="status-bar">
+                <span id="node-count">Nodes: 0</span>
+                <span id="cache-status">Cache: --</span>
+            </div>
+        </header>
+        
+        <nav>
+            <a href="/" class="active">Dashboard</a>
+            <a href="/memory">Memory</a>
+            <a href="/nodes">Nodes</a>
+            <a href="/tasks">Tasks</a>
+            <a href="/compiler">Compiler</a>
+        </nav>
+        
+        <main>
+            <section class="command-panel">
+                <h2>Execute Command</h2>
+                <form id="command-form">
+                    <input type="text" id="command-input" placeholder="Enter command...">
+                    <select id="mode-select">
+                        <option value="local">Local</option>
+                        <option value="distributed">Distributed</option>
+                    </select>
+                    <button type="submit">Execute</button>
+                </form>
+                <div id="command-output"></div>
+            </section>
+            
+            <section class="stats-grid">
+                <div class="stats-card">
+                    <h3>System Status</h3>
+                    <div id="system-stats">Loading...</div>
+                </div>
+            </section>
+        </main>
+    </div>
+    <script src="/static/script.js"></script>
+</body>
+</html>
