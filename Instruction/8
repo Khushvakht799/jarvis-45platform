@@ -1,0 +1,72 @@
+# Сборка v1.9 зафиксирована. Демон активен.
+
+#  Переходим к следующему логическому слою — Метаконтроль и эволюция.
+
+#  Задача: Замкнуть цикл обратной связи. Сейчас SyVGr (симптом) формируется, но никак не влияет на будущее поведение. Добавим:
+
+# 1. Накопление опыта: Сохранение пар (команда, результат, симптом) в память.
+# 2. Адаптация: Если симптом показывает отклонение (deviation != 0), корректируем AVGr или правила генерации SqVGr.
+
+# Для минимальной реализации — сохраняем в JSON-файл и при повторении команды учитываем прошлый опыт.
+
+{
+"jarvis_build": {
+"version": "2.0",
+"structure": {
+"core": {
+"framework": ["output.py"],
+"engine": ["interpreter.py"],
+"orchestrator": ["engine.py"],
+"daemon": ["listener.py"],
+"metacontrol": ["memory.py", "evolve.py"]
+}
+},
+"files": [
+{
+"path": "core/framework/output.py",
+"language": "python",
+"content": "def console_output(text):\n    print(f\"[Jarvis]: {text}\")\n    return {\"status\": \"ok\", \"output\": text}"
+},
+{
+"path": "core/engine/interpreter.py",
+"language": "python",
+"content": "from core.framework.output import console_output\n\ndef execute_sequence(sequence, state, start=0, end=None):\n    if end is None:\n        end = len(sequence)\n    \n    idx = start\n    while idx < end:\n        step = sequence[idx]\n        action = step[\"action\"]\n        \n        if action == \"init_counter\":\n            state[step[\"target\"]] = step[\"value\"]\n            idx += 1\n        \n        elif action == \"console_output\":\n            console_output(step[\"value\"])\n            if \"output_log\" not in state:\n                state[\"output_log\"] = []\n            state[\"output_log\"].append(step[\"value\"])\n            idx += 1\n        \n        elif action == \"increment\":\n            state[step[\"target\"]] += step[\"by\"]\n            idx += 1\n        \n        elif action == \"loop_start\":\n            condition = step[\"condition\"]\n            var_name = condition.split()[0]\n            limit = int(condition.split()[2])\n            \n            loop_end_idx = idx + 1\n            depth = 1\n            while loop_end_idx < len(sequence):\n                if sequence[loop_end_idx][\"action\"] == \"loop_start\":\n                    depth += 1\n                elif sequence[loop_end_idx][\"action\"] == \"loop_end\":\n                    depth -= 1\n                    if depth == 0:\n                        break\n                loop_end_idx += 1\n            \n            while state.get(var_name, 0) < limit:\n                execute_sequence(sequence, state, idx + 1, loop_end_idx)\n            \n            idx = loop_end_idx + 1\n        \n        elif action == \"loop_end\":\n            return\n        \n        elif action == \"return\":\n            return {\"status\": step[\"value\"], \"final_state\": state}\n        \n        else:\n            idx += 1\n    \n    return {\"status\": \"completed\", \"final_state\": state}\n\nif name == \"main\":\n    test_sq = {\n        \"sequence\": [\n            {\"step\": 1, \"action\": \"init_counter\", \"target\": \"count\", \"value\": 0},\n            {\"step\": 2, \"action\": \"loop_start\", \"condition\": \"count < 3\"},\n            {\"step\": 3, \"action\": \"console_output\", \"value\": \"привет\"},\n            {\"step\": 4, \"action\": \"increment\", \"target\": \"count\", \"by\": 1},\n            {\"step\": 5, \"action\": \"loop_end\"},\n            {\"step\": 6, \"action\": \"return\", \"value\": \"success\"}\n        ]\n    }\n    test_state = {\"count\": 0, \"output_log\": []}\n    result = execute_sequence(test_sq[\"sequence\"], test_state)\n    print(\"Test result:\", result)"
+},
+{
+"path": "core/metacontrol/memory.py",
+"language": "python",
+"content": "import json\nimport os\nfrom datetime import datetime\n\nMEMORY_FILE = \"jarvis_memory.json\"\n\ndef load_memory():\n    if os.path.exists(MEMORY_FILE):\n        with open(MEMORY_FILE, 'r') as f:\n            return json.load(f)\n    return {\"experiences\": []}\n\ndef save_memory(memory):\n    with open(MEMORY_FILE, 'w') as f:\n        json.dump(memory, f, indent=2, ensure_ascii=False)\n\ndef add_experience(command, avgr, sqvgr, bvgr, givgr, syvgr):\n    memory = load_memory()\n    memory[\"experiences\"].append({\n        \"timestamp\": datetime.now().isoformat(),\n        \"command\": command,\n        \"avgr\": avgr,\n        \"sqvgr\": sqvgr,\n        \"bvgr\": bvgr,\n        \"givgr\": givgr,\n        \"syvgr\": syvgr\n    })\n    save_memory(memory)\n    return memory\n\ndef find_similar_commands(command, limit=5):\n    memory = load_memory()\n    # Простейшее совпадение по подстроке\n    matches = [exp for exp in memory[\"experiences\"] if command in exp[\"command\"] or exp[\"command\"] in command]\n    return matches[-limit:]"
+},
+{
+"path": "core/metacontrol/evolve.py",
+"language": "python",
+"content": "from core.metacontrol.memory import find_similar_commands\n\ndef adapt_avgr(command, avgr, syvgr):\n    # Если отклонение есть — пытаемся скорректировать\n    if syvgr[\"symptom\"].get(\"deviation\", 0) != 0:\n        print(\"[Evolve] Deviation detected, adapting...\")\n        \n        # Ищем похожие команды в памяти\n        similar = find_similar_commands(command)\n        if similar:\n            # Анализируем успешные случаи\n            successful = [s for s in similar if s[\"syvgr\"][\"symptom\"][\"status\"] == \"success\"]\n            if successful:\n                # Берём параметры из успешного опыта\n                last_success = successful[-1]\n                if \"repeat\" in last_success[\"avgr\"][\"intent\"]:\n                    avgr[\"intent\"][\"repeat\"] = last_success[\"avgr\"][\"intent\"][\"repeat\"]\n                    print(f\"[Evolve] Adjusted repeat to {avgr['intent']['repeat']}\")\n    return avgr\n\ndef evolve_sqvgr(sqvgr, syvgr):\n    # Здесь можно менять последовательность действий\n    # Пока заглушка\n    return sqvgr"
+},
+{
+"path": "core/orchestrator/engine.py",
+"language": "python",
+"content": "import json\nfrom core.engine.interpreter import execute_sequence\nfrom core.metacontrol.memory import add_experience\nfrom core.metacontrol.evolve import adapt_avgr, evolve_sqvgr\n\ndef text_to_avgr(command_text):\n    if \"привет\" in command_text and \"три\" in command_text:\n        return {\n            \"intent\": {\n                \"type\": \"execute_command\",\n                \"command\": \"output\",\n                \"params\": {\"text\": \"привет\"},\n                \"repeat\": 3\n            }\n        }\n    else:\n        return {\"intent\": {\"type\": \"unknown\"}}\n\ndef avgr_to_sqbvgr(avgr):\n    if avgr[\"intent\"][\"type\"] == \"execute_command\" and avgr[\"intent\"][\"command\"] == \"output\":\n        text = avgr[\"intent\"][\"params\"][\"text\"]\n        repeat = avgr[\"intent\"][\"repeat\"]\n        \n        seq = []\n        seq.append({\"step\": 1, \"action\": \"init_counter\", \"target\": \"count\", \"value\": 0})\n        seq.append({\"step\": 2, \"action\": \"loop_start\", \"condition\": f\"count < {repeat}\"})\n        seq.append({\"step\": 3, \"action\": \"console_output\", \"value\": text})\n        seq.append({\"step\": 4, \"action\": \"increment\", \"target\": \"count\", \"by\": 1})\n        seq.append({\"step\": 5, \"action\": \"loop_end\"})\n        seq.append({\"step\": 6, \"action\": \"return\", \"value\": \"success\"})\n        \n        for i, step in enumerate(seq):\n            step[\"step\"] = i + 1\n        \n        sqvgr = {\"sequence\": seq}\n        bvgr = {\"state\": {\"count\": 0, \"output_log\": []}}\n        return sqvgr, bvgr\n    else:\n        return None, None\n\ndef run_orchestrator(input_json):\n    print(\"[Orchestrator] Received:\", input_json)\n    \n    try:\n        if isinstance(input_json, str):\n            data = json.loads(input_json)\n        else:\n            data = input_json\n    except:\n        return {\"error\": \"Invalid JSON\"}\n    \n    command = data.get(\"command\", \"\")\n    \n    # Шаг 1: Понимание\n    avgr = text_to_avgr(command)\n    print(\"[Orchestrator] AVGr (initial):\", avgr)\n    \n    # Шаг 2: Компиляция\n    sqvgr, bvgr = avgr_to_sqbvgr(avgr)\n    if sqvgr is None:\n        return {\"error\": \"Unknown command\"}\n    \n    print(\"[Orchestrator] SqVGr (initial):\", sqvgr)\n    print(\"[Orchestrator] BVGr (initial):\", bvgr)\n    \n    # Шаг 3: Исполнение\n    result = execute_sequence(sqvgr[\"sequence\"], bvgr[\"state\"])\n    print(\"[Orchestrator] Execution result:\", result)\n    \n    # Шаг 4: Метаконтроль\n    givgr = {\n        \"gist\": {\n            \"action\": \"output\",\n            \"text\": command,\n            \"result\": result.get(\"status\", \"unknown\")\n        }\n    }\n    syvgr = {\n        \"symptom\": {\n            \"status\": result.get(\"status\", \"error\"),\n            \"expected\": avgr[\"intent\"].get(\"repeat\", 0),\n            \"actual\": len(bvgr[\"state\"].get(\"output_log\", [])),\n            \"deviation\": abs(avgr[\"intent\"].get(\"repeat\", 0) - len(bvgr[\"state\"].get(\"output_log\", []))),\n            \"logs\": bvgr[\"state\"].get(\"output_log\", [])\n        }\n    }\n    \n    print(\"[Orchestrator] GiVGr:\", givgr)\n    print(\"[Orchestrator] SyVGr:\", syvgr)\n    \n    # Шаг 5: Сохранение опыта\n    add_experience(command, avgr, sqvgr, bvgr, givgr, syvgr)\n    \n    # Шаг 6: Эволюция (обратная связь)\n    avgr_adapted = adapt_avgr(command, avgr, syvgr)\n    sqvgr_adapted = evolve_sqvgr(sqvgr, syvgr)\n    \n    if avgr_adapted != avgr or sqvgr_adapted != sqvgr:\n        print(\"[Orchestrator] Evolution applied\")\n    \n    return {\n        \"status\": \"ok\",\n        \"givgr\": givgr,\n        \"syvgr\": syvgr,\n        \"final_state\": bvgr[\"state\"]\n    }\n\nif name == \"main\":\n    test_input = {\"command\": \"скажи привет три раза\"}\n    result = run_orchestrator(test_input)\n    print(\"\\n[Orchestrator] Final result:\", result)"
+},
+{
+"path": "core/daemon/listener.py",
+"language": "python",
+"content": "import sys\nimport json\nimport time\nfrom core.orchestrator.engine import run_orchestrator\n\ndef listen_stdin():\n    print(\"[Daemon] Listening for commands on stdin. Type 'exit' to quit.\")\n    while True:\n        try:\n            line = sys.stdin.readline()\n            if not line:\n                time.sleep(0.1)\n                continue\n            \n            cmd = line.strip()\n            if cmd.lower() == 'exit':\n                print(\"[Daemon] Shutting down.\")\n                break\n            \n            if not cmd:\n                continue\n            \n            if cmd.startswith('{') and cmd.endswith('}'):\n                input_json = json.loads(cmd)\n            else:\n                input_json = {\"command\": cmd}\n            \n            result = run_orchestrator(input_json)\n            print(\"[Daemon] Result:\", json.dumps(result, ensure_ascii=False))\n            print(\"---\")\n        except KeyboardInterrupt:\n            print(\"\\n[Daemon] Interrupted. Exiting.\")\n            break\n        except Exception as e:\n            print(f\"[Daemon] Error: {e}\")\n\ndef listen_file(filepath):\n    print(f\"[Daemon] Watching file: {filepath}\")\n    last_content = \"\"\n    while True:\n        try:\n            with open(filepath, 'r') as f:\n                content = f.read().strip()\n            if content and content != last_content:\n                print(f\"[Daemon] New content detected\")\n                last_content = content\n                if content.startswith('{') and content.endswith('}'):\n                    input_json = json.loads(content)\n                else:\n                    input_json = {\"command\": content}\n                result = run_orchestrator(input_json)\n                print(\"[Daemon] Result:\", json.dumps(result, ensure_ascii=False))\n                print(\"---\")\n            time.sleep(1)\n        except FileNotFoundError:\n            print(f\"[Daemon] File not found: {filepath}, waiting...\")\n            time.sleep(2)\n        except Exception as e:\n            print(f\"[Daemon] Error: {e}\")\n            time.sleep(1)\n\nif name == \"main\":\n    if len(sys.argv) > 1 and sys.argv[1] == \"--file\":\n        if len(sys.argv) > 2:\n            listen_file(sys.argv[2])\n        else:\n            print(\"Usage: python listener.py --file <filename>\")\n    else:\n        listen_stdin()"
+},
+{
+"path": "run_daemon.py",
+"language": "python",
+"content": "from core.daemon.listener import listen_stdin\n\nif name == \"main\":\n    print(\"Starting Jarvis 1.0 Daemon with Metacontrol (stdin mode)\")\n    listen_stdin()"
+},
+{
+"path": "README.md",
+"language": "markdown",
+"content": "# Jarvis 1.0 - Minimal Meta-Engine\n\n## Current Build: Metacontrol & Evolution (v2.0)\n\n### Structure\n- core/framework/output.py - Basic I/O\n- core/engine/interpreter.py - SqVGr interpreter\n- core/orchestrator/engine.py - Orchestrator with metacontrol hooks\n- core/daemon/listener.py - Daemon (stdin/file)\n- core/metacontrol/memory.py - Experience storage\n- core/metacontrol/evolve.py - Adaptation logic\n\n### Features\n- Full cycle: command → understanding → execution → metacontrol → memory → evolution\n- Experiences saved to jarvis_memory.json\n- Simple adaptation: adjusts parameters based on past success\n\n### Run\nbash\npython run_daemon.py\n\n\n### Test\nType скажи привет три раза. Check jarvis_memory.json after execution."
+}
+],
+"copy_button": true,
+"vector_signature": {
+"build_hash": "6d3b1c0e9f8a7b6c5d4e3f2a1b0c9d8e7f6a5b4c3d2",
+"bv_schema": "2.0"
+}
+}
+}

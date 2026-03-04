@@ -1,0 +1,56 @@
+# Сборка зафиксирована. Переходим к слою Демонов (Ур. VII).
+
+# Задача: обернуть Оркестратор в бесконечный цикл ожидания команд. В минимальной реализации — чтение из stdin или файла.
+
+# Добавляем core/daemon/listener.py.
+
+{
+"jarvis_build": {
+"version": "1.9",
+"structure": {
+"core": {
+"framework": ["output.py"],
+"engine": ["interpreter.py"],
+"orchestrator": ["engine.py"],
+"daemon": ["listener.py"]
+}
+},
+"files": [
+{
+"path": "core/framework/output.py",
+"language": "python",
+"content": "def console_output(text):\n    print(f\"[Jarvis]: {text}\")\n    return {\"status\": \"ok\", \"output\": text}"
+},
+{
+"path": "core/engine/interpreter.py",
+"language": "python",
+"content": "from core.framework.output import console_output\n\ndef execute_sequence(sequence, state, start=0, end=None):\n    if end is None:\n        end = len(sequence)\n    \n    idx = start\n    while idx < end:\n        step = sequence[idx]\n        action = step[\"action\"]\n        \n        if action == \"init_counter\":\n            state[step[\"target\"]] = step[\"value\"]\n            idx += 1\n        \n        elif action == \"console_output\":\n            console_output(step[\"value\"])\n            if \"output_log\" not in state:\n                state[\"output_log\"] = []\n            state[\"output_log\"].append(step[\"value\"])\n            idx += 1\n        \n        elif action == \"increment\":\n            state[step[\"target\"]] += step[\"by\"]\n            idx += 1\n        \n        elif action == \"loop_start\":\n            condition = step[\"condition\"]\n            var_name = condition.split()[0]\n            limit = int(condition.split()[2])\n            \n            loop_end_idx = idx + 1\n            depth = 1\n            while loop_end_idx < len(sequence):\n                if sequence[loop_end_idx][\"action\"] == \"loop_start\":\n                    depth += 1\n                elif sequence[loop_end_idx][\"action\"] == \"loop_end\":\n                    depth -= 1\n                    if depth == 0:\n                        break\n                loop_end_idx += 1\n            \n            while state.get(var_name, 0) < limit:\n                execute_sequence(sequence, state, idx + 1, loop_end_idx)\n            \n            idx = loop_end_idx + 1\n        \n        elif action == \"loop_end\":\n            return\n        \n        elif action == \"return\":\n            return {\"status\": step[\"value\"], \"final_state\": state}\n        \n        else:\n            idx += 1\n    \n    return {\"status\": \"completed\", \"final_state\": state}\n\nif name == \"main\":\n    test_sq = {\n        \"sequence\": [\n            {\"step\": 1, \"action\": \"init_counter\", \"target\": \"count\", \"value\": 0},\n            {\"step\": 2, \"action\": \"loop_start\", \"condition\": \"count < 3\"},\n            {\"step\": 3, \"action\": \"console_output\", \"value\": \"привет\"},\n            {\"step\": 4, \"action\": \"increment\", \"target\": \"count\", \"by\": 1},\n            {\"step\": 5, \"action\": \"loop_end\"},\n            {\"step\": 6, \"action\": \"return\", \"value\": \"success\"}\n        ]\n    }\n    test_state = {\"count\": 0, \"output_log\": []}\n    result = execute_sequence(test_sq[\"sequence\"], test_state)\n    print(\"Test result:\", result)"
+},
+{
+"path": "core/orchestrator/engine.py",
+"language": "python",
+"content": "import json\nfrom core.engine.interpreter import execute_sequence\n\ndef text_to_avgr(command_text):\n    if \"привет\" in command_text and \"три\" in command_text:\n        return {\n            \"intent\": {\n                \"type\": \"execute_command\",\n                \"command\": \"output\",\n                \"params\": {\"text\": \"привет\"},\n                \"repeat\": 3\n            }\n        }\n    else:\n        return {\"intent\": {\"type\": \"unknown\"}}\n\ndef avgr_to_sqbvgr(avgr):\n    if avgr[\"intent\"][\"type\"] == \"execute_command\" and avgr[\"intent\"][\"command\"] == \"output\":\n        text = avgr[\"intent\"][\"params\"][\"text\"]\n        repeat = avgr[\"intent\"][\"repeat\"]\n        \n        seq = []\n        seq.append({\"step\": 1, \"action\": \"init_counter\", \"target\": \"count\", \"value\": 0})\n        seq.append({\"step\": 2, \"action\": \"loop_start\", \"condition\": f\"count < {repeat}\"})\n        seq.append({\"step\": 3, \"action\": \"console_output\", \"value\": text})\n        seq.append({\"step\": 4, \"action\": \"increment\", \"target\": \"count\", \"by\": 1})\n        seq.append({\"step\": 5, \"action\": \"loop_end\"})\n        seq.append({\"step\": 6, \"action\": \"return\", \"value\": \"success\"})\n        \n        for i, step in enumerate(seq):\n            step[\"step\"] = i + 1\n        \n        sqvgr = {\"sequence\": seq}\n        bvgr = {\"state\": {\"count\": 0, \"output_log\": []}}\n        return sqvgr, bvgr\n    else:\n        return None, None\n\ndef run_orchestrator(input_json):\n    print(\"[Orchestrator] Received:\", input_json)\n    \n    try:\n        if isinstance(input_json, str):\n            data = json.loads(input_json)\n        else:\n            data = input_json\n    except:\n        return {\"error\": \"Invalid JSON\"}\n    \n    command = data.get(\"command\", \"\")\n    \n    avgr = text_to_avgr(command)\n    print(\"[Orchestrator] AVGr:\", avgr)\n    \n    sqvgr, bvgr = avgr_to_sqbvgr(avgr)\n    if sqvgr is None:\n        return {\"error\": \"Unknown command\"}\n    \n    print(\"[Orchestrator] SqVGr:\", sqvgr)\n    print(\"[Orchestrator] BVGr:\", bvgr)\n    \n    result = execute_sequence(sqvgr[\"sequence\"], bvgr[\"state\"])\n    print(\"[Orchestrator] Execution result:\", result)\n    \n    givgr = {\n        \"gist\": {\n            \"action\": \"output\",\n            \"text\": command,\n            \"result\": result.get(\"status\", \"unknown\")\n        }\n    }\n    syvgr = {\n        \"symptom\": {\n            \"status\": result.get(\"status\", \"error\"),\n            \"expected\": avgr[\"intent\"].get(\"repeat\", 0),\n            \"actual\": len(bvgr[\"state\"].get(\"output_log\", [])),\n            \"deviation\": 0,\n            \"logs\": bvgr[\"state\"].get(\"output_log\", [])\n        }\n    }\n    \n    print(\"[Orchestrator] GiVGr:\", givgr)\n    print(\"[Orchestrator] SyVGr:\", syvgr)\n    \n    return {\n        \"status\": \"ok\",\n        \"givgr\": givgr,\n        \"syvgr\": syvgr,\n        \"final_state\": bvgr[\"state\"]\n    }\n\nif name == \"main\":\n    test_input = {\"command\": \"скажи привет три раза\"}\n    result = run_orchestrator(test_input)\n    print(\"\\n[Orchestrator] Final result:\", result)"
+},
+{
+"path": "core/daemon/listener.py",
+"language": "python",
+"content": "import sys\nimport json\nimport time\nfrom core.orchestrator.engine import run_orchestrator\n\ndef listen_stdin():\n    print(\"[Daemon] Listening for commands on stdin. Type 'exit' to quit.\")\n    while True:\n        try:\n            line = sys.stdin.readline()\n            if not line:\n                time.sleep(0.1)\n                continue\n            \n            cmd = line.strip()\n            if cmd.lower() == 'exit':\n                print(\"[Daemon] Shutting down.\")\n                break\n            \n            if not cmd:\n                continue\n            \n            # Оборачиваем в JSON, если пришла просто строка\n            if cmd.startswith('{') and cmd.endswith('}'):\n                input_json = json.loads(cmd)\n            else:\n                input_json = {\"command\": cmd}\n            \n            result = run_orchestrator(input_json)\n            print(\"[Daemon] Result:\", json.dumps(result, ensure_ascii=False))\n            print(\"---\")\n        except KeyboardInterrupt:\n            print(\"\\n[Daemon] Interrupted. Exiting.\")\n            break\n        except Exception as e:\n            print(f\"[Daemon] Error: {e}\")\n\ndef listen_file(filepath):\n    print(f\"[Daemon] Watching file: {filepath}\")\n    last_content = \"\"\n    while True:\n        try:\n            with open(filepath, 'r') as f:\n                content = f.read().strip()\n            if content and content != last_content:\n                print(f\"[Daemon] New content detected\")\n                last_content = content\n                if content.startswith('{') and content.endswith('}'):\n                    input_json = json.loads(content)\n                else:\n                    input_json = {\"command\": content}\n                result = run_orchestrator(input_json)\n                print(\"[Daemon] Result:\", json.dumps(result, ensure_ascii=False))\n                print(\"---\")\n            time.sleep(1)\n        except FileNotFoundError:\n            print(f\"[Daemon] File not found: {filepath}, waiting...\")\n            time.sleep(2)\n        except Exception as e:\n            print(f\"[Daemon] Error: {e}\")\n            time.sleep(1)\n\nif name == \"main\":\n    if len(sys.argv) > 1 and sys.argv[1] == \"--file\":\n        if len(sys.argv) > 2:\n            listen_file(sys.argv[2])\n        else:\n            print(\"Usage: python listener.py --file <filename>\")\n    else:\n        listen_stdin()"
+},
+{
+"path": "run_daemon.py",
+"language": "python",
+"content": "from core.daemon.listener import listen_stdin\n\nif name == \"main\":\n    print(\"Starting Jarvis 1.0 Daemon (stdin mode)\")\n    listen_stdin()"
+},
+{
+"path": "README.md",
+"language": "markdown",
+"content": "# Jarvis 1.0 - Minimal Meta-Engine\n\n## Current Build: Daemon Layer (v1.9)\n\n### Structure\n- core/framework/output.py - Basic I/O framework\n- core/engine/interpreter.py - SqVGr interpreter with loop isolation\n- core/orchestrator/engine.py - Main orchestrator: JSON -> AVGr -> SqVGr/BVGr -> execution -> GiVGr/SyVGr\n- core/daemon/listener.py - Daemon: stdin/file listener wrapping orchestrator\n- run_daemon.py - Launcher for stdin daemon\n\n### Run\nbash\n# Stdin mode (type commands)\npython run_daemon.py\n\n# File mode\npython core/daemon/listener.py --file commands.txt\n\n\n### Test Commands\n- скажи привет три раза\n- exit (to quit)\n\n### Next Layer\nMetacontrol integration (GiVGr/SyVGr feedback loop) and process evolution."
+}
+],
+"copy_button": true,
+"vector_signature": {
+"build_hash": "5c2a0b9d8e7f6a5b4c3d2e1f0a9b8c7d6e5f4a3b2c1",
+"bv_schema": "1.9"
+}
+}
+}

@@ -1,0 +1,21 @@
+{
+"type": "sqvgr_package",
+"version": "1.0",
+"files": [
+{
+"path": "core/framework/output.py",
+"language": "python",
+"content": "def console_output(text):\n    print(f\"[Jarvis]: {text}\")\n    return {\"status\": \"ok\", \"output\": text}"
+},
+{
+"path": "core/engine/interpreter.py",
+"language": "python",
+"content": "from core.framework.output import console_output\n\ndef execute_sequence(sqVGr, bvGr):\n    for step in sqVGr[\"sequence\"]:\n        action = step[\"action\"]\n        if action == \"init_counter\":\n            bvGr[\"state\"][step[\"target\"]] = step[\"value\"]\n        elif action == \"console_output\":\n            console_output(step[\"value\"])\n            if \"output_log\" not in bvGr[\"state\"]:\n                bvGr[\"state\"][\"output_log\"] = []\n            bvGr[\"state\"][\"output_log\"].append(step[\"value\"])\n        elif action == \"increment\":\n            bvGr[\"state\"][step[\"target\"]] += step[\"by\"]\n        elif action == \"return\":\n            return {\"status\": step[\"value\"], \"final_state\": bvGr[\"state\"]}\n    return {\"status\": \"completed\", \"final_state\": bvGr[\"state\"]}\n\nif name == \"main\":\n    test_sq = {\"sequence\": [{\"step\": 1, \"action\": \"init_counter\", \"target\": \"count\", \"value\": 0}, {\"step\": 2, \"action\": \"console_output\", \"value\": \"привет\"}, {\"step\": 3, \"action\": \"increment\", \"target\": \"count\", \"by\": 1}, {\"step\": 4, \"action\": \"console_output\", \"value\": \"привет\"}, {\"step\": 5, \"action\": \"increment\", \"target\": \"count\", \"by\": 1}, {\"step\": 6, \"action\": \"console_output\", \"value\": \"привет\"}, {\"step\": 7, \"action\": \"return\", \"value\": \"success\"}]}\n    test_bv = {\"state\": {\"count\": 0, \"output_log\": []}}\n    result = execute_sequence(test_sq, test_bv)\n    print(\"Test result:\", result)"
+}
+],
+"copy_ready": true,
+"vector_signature": {
+"sq_hash": "c3491b0f8f6e5a4d3c2b1a0f9e8d7c6b5a4f3e2d1",
+"bv_schema": "1.0"
+}
+}

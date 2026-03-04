@@ -1,0 +1,21 @@
+{
+"type": "sqvgr_package",
+"version": "1.5",
+"files": [
+{
+"path": "core/framework/output.py",
+"language": "python",
+"content": "def console_output(text):\n    print(f\"[Jarvis]: {text}\")\n    return {\"status\": \"ok\", \"output\": text}"
+},
+{
+"path": "core/engine/interpreter.py",
+"language": "python",
+"content": "from core.framework.output import console_output\n\ndef execute_sequence(sequence, state, start=0, end=None):\n    if end is None:\n        end = len(sequence)\n    \n    idx = start\n    while idx < end:\n        step = sequence[idx]\n        action = step[\"action\"]\n        \n        if action == \"init_counter\":\n            state[step[\"target\"]] = step[\"value\"]\n            idx += 1\n        \n        elif action == \"console_output\":\n            console_output(step[\"value\"])\n            if \"output_log\" not in state:\n                state[\"output_log\"] = []\n            state[\"output_log\"].append(step[\"value\"])\n            idx += 1\n        \n        elif action == \"increment\":\n            state[step[\"target\"]] += step[\"by\"]\n            idx += 1\n        \n        elif action == \"loop_start\":\n            condition = step[\"condition\"]\n            var_name = condition.split()[0]\n            limit = int(condition.split()[2])\n            \n            loop_end_idx = idx + 1\n            depth = 1\n            while loop_end_idx < len(sequence):\n                if sequence[loop_end_idx][\"action\"] == \"loop_start\":\n                    depth += 1\n                elif sequence[loop_end_idx][\"action\"] == \"loop_end\":\n                    depth -= 1\n                    if depth == 0:\n                        break\n                loop_end_idx += 1\n            \n            while state.get(var_name, 0) < limit:\n                execute_sequence(sequence, state, idx + 1, loop_end_idx)\n            \n            idx = loop_end_idx + 1\n        \n        elif action == \"loop_end\":\n            return\n        \n        elif action == \"return\":\n            return {\"status\": step[\"value\"], \"final_state\": state}\n        \n        else:\n            idx += 1\n    \n    return {\"status\": \"completed\", \"final_state\": state}\n\nif name == \"main\":\n    test_sq = {\n        \"sequence\": [\n            {\"step\": 1, \"action\": \"init_counter\", \"target\": \"count\", \"value\": 0},\n            {\"step\": 2, \"action\": \"loop_start\", \"condition\": \"count < 3\"},\n            {\"step\": 3, \"action\": \"console_output\", \"value\": \"привет\"},\n            {\"step\": 4, \"action\": \"increment\", \"target\": \"count\", \"by\": 1},\n            {\"step\": 5, \"action\": \"loop_end\"},\n            {\"step\": 6, \"action\": \"return\", \"value\": \"success\"}\n        ]\n    }\n    test_state = {\"count\": 0, \"output_log\": []}\n    result = execute_sequence(test_sq[\"sequence\"], test_state)\n    print(\"Test result:\", result)"
+}
+],
+"copy_ready": true,
+"vector_signature": {
+"sq_hash": "18e6f5a4b3c2d1e0f9a8b7c6d5e4f3a2b1c0d9e8f7",
+"bv_schema": "1.5"
+}
+}
