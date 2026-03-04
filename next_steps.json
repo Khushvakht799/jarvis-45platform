@@ -1,0 +1,17 @@
+{
+  "priority_1": [
+    "Fix Web UI JavaScript validation",
+    "Add persistence for scheduler",
+    "Implement authentication"
+  ],
+  "priority_2": [
+    "Add load balancing",
+    "Implement fault tolerance",
+    "Complete vectorizer"
+  ],
+  "priority_3": [
+    "Add TLS",
+    "Real hardware integration",
+    "Semantic search"
+  ]
+}
