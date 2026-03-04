@@ -1,0 +1,46 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "jarvis-45platform"
+version = "3.0.1"
+description = "Meta-Engine Platform with 10-level architecture and VGr formats"
+readme = "README.md"
+authors = [
+    {name = "Khushvakht799"},
+]
+license = {text = "MIT"}
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+]
+requires-python = ">=3.9"
+dependencies = [
+    "flask>=2.0.0",
+    "requests>=2.25.0",
+    "psutil>=5.8.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/Khushvakht799/jarvis-45platform"
+Repository = "https://github.com/Khushvakht799/jarvis-45platform.git"
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts = "-ra -q"
+testpaths = [
+    "tests",
+]
+
+[tool.coverage.run]
+source = ["core"]
+omit = ["tests/*"]
+
+[tool.coverage.report]
+show_missing = true
