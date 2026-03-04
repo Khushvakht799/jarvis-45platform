@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Jarvis - Node Manager</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <script src="/static/script.js" defer></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Jarvis Node Manager</h1>
+            <div class="status-bar">
+                <span id="node-count">Nodes: 0</span>
+                <span id="distributed-status">Distributed: --</span>
+            </div>
+        </header>
+        
+        <nav>
+            <a href="/">Dashboard</a>
+            <a href="/memory">Memory</a>
+            <a href="/nodes" class="active">Nodes</a>
+            <a href="/tasks">Tasks</a>
+            <a href="/compiler">Compiler</a>
+        </nav>
+        
+        <main>
+            <section class="node-controls">
+                <button onclick="discoverNodes()">Discover Nodes</button>
+                <button onclick="startDistributed()">Start Distributed Mode</button>
+                <button onclick="stopDistributed()">Stop Distributed Mode</button>
+            </section>
+            
+            <section class="node-stats">
+                <div id="distributed-stats">Loading...</div>
+            </section>
+            
+            <section class="node-list">
+                <h2>Active Nodes</h2>
+                <div id="nodes-table">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Node ID</th>
+                                <th>Address</th>
+                                <th>Last Seen</th>
+                                <th>Capabilities</th>
+                                <th>Tasks</th>
+                            </tr>
+                        </thead>
+                        <tbody id="nodes-body">
+                            <!-- Populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+            
+            <section class="task-distribution">
+                <h2>Task Distribution</h2>
+                <div id="task-distribution"></div>
+            </section>
+        </main>
+    </div>
+</body>
+</html>

@@ -1,0 +1,15 @@
+  "jarvis_build": {
+    "version": "1.7",
+    "structure": {
+      "core": {
+        "framework": ["output.py"],
+        "engine": ["interpreter.py"],
+        "orchestrator": ["engine.py"]
+      }
+    },
+    "launch_script": {
+      "name": "run_orchestrator.py",
+      "content": "from core.orchestrator.engine import run_orchestrator\n\n# Тестовый запуск\ninput_command = {\"command\": \"скажи привет три раза\"}\nresult = run_orchestrator(input_command)\nprint(\"[Orchestrator] Final result:\", result)"
+    },
+    "copy_button": true
+  }

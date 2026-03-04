@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Jarvis - Task Scheduler</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <script src="/static/script.js" defer></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Jarvis Task Scheduler</h1>
+            <div class="status-bar">
+                <span id="node-count">Nodes: 0</span>
+                <span id="cache-status">Cache: --</span>
+            </div>
+        </header>
+        
+        <nav>
+            <a href="/">Dashboard</a>
+            <a href="/memory">Memory</a>
+            <a href="/nodes">Nodes</a>
+            <a href="/tasks" class="active">Tasks</a>
+            <a href="/compiler">Compiler</a>
+        </nav>
+        
+        <main>
+            <section class="task-controls">
+                <h2>Schedule New Task</h2>
+                <form id="task-form">
+                    <input type="text" id="task-command" placeholder="Command">
+                    <select id="task-type">
+                        <option value="once">One-time</option>
+                        <option value="recurring">Recurring</option>
+                    </select>
+                    <input type="number" id="task-interval" placeholder="Interval (seconds)" value="60">
+                    <button type="submit">Schedule</button>
+                </form>
+            </section>
+            
+            <section class="task-list">
+                <h2>Scheduled Tasks</h2>
+                <div id="tasks-table">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Task ID</th>
+                                <th>Command</th>
+                                <th>Next Run</th>
+                                <th>Type</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tasks-body">
+                            <!-- Populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+            
+            <section class="task-history">
+                <h2>Task History</h2>
+                <div id="task-history"></div>
+            </section>
+        </main>
+    </div>
+</body>
+</html>

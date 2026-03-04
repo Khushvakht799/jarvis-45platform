@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Jarvis - Compiler Dashboard</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <script src="/static/script.js" defer></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Jarvis Compiler Dashboard</h1>
+            <div class="status-bar">
+                <span id="node-count">Nodes: 0</span>
+                <span id="cache-status">Cache: --</span>
+            </div>
+        </header>
+        
+        <nav>
+            <a href="/">Dashboard</a>
+            <a href="/memory">Memory</a>
+            <a href="/nodes">Nodes</a>
+            <a href="/tasks">Tasks</a>
+            <a href="/compiler" class="active">Compiler</a>
+        </nav>
+        
+        <main>
+            <section class="compiler-controls">
+                <h2>Test Compilation</h2>
+                <form id="compile-form">
+                    <input type="text" id="compile-command" placeholder="Enter command to compile">
+                    <button type="submit">Compile</button>
+                </form>
+            </section>
+            
+            <section class="cache-stats">
+                <h2>Cache Statistics</h2>
+                <div id="cache-stats">Loading...</div>
+            </section>
+            
+            <section class="bytecode-viewer">
+                <h2>Bytecode Output</h2>
+                <pre id="bytecode-output"></pre>
+            </section>
+            
+            <section class="optimization-log">
+                <h2>Optimization Log</h2>
+                <div id="optimization-log"></div>
+            </section>
+        </main>
+    </div>
+</body>
+</html>

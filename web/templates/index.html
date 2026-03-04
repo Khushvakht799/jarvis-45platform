@@ -1,18 +1,18 @@
-﻿<!DOCTYPE html>
-<html lang="en">
+<!DOCTYPE html>
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Jarvis 3.0.1 Dashboard</title>
+    <title>Jarvis 3.0 Dashboard</title>
     <link rel="stylesheet" href="/static/style.css">
+    <script src="/static/script.js" defer></script>
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>Jarvis 3.0.1 Control Panel</h1>
+            <h1>Jarvis 3.0 Control Panel</h1>
             <div class="status-bar">
                 <span id="node-count">Nodes: 0</span>
                 <span id="cache-status">Cache: --</span>
+                <span id="distributed-status">Distributed: --</span>
             </div>
         </header>
         
@@ -38,14 +38,28 @@
                 <div id="command-output"></div>
             </section>
             
-            <section class="stats-grid">
-                <div class="stats-card">
-                    <h3>System Status</h3>
+            <div class="stats-grid">
+                <section class="stats-card">
+                    <h3>System Health</h3>
                     <div id="system-stats">Loading...</div>
-                </div>
+                </section>
+                
+                <section class="stats-card">
+                    <h3>Recent Tasks</h3>
+                    <div id="recent-tasks">Loading...</div>
+                </section>
+                
+                <section class="stats-card">
+                    <h3>Active Nodes</h3>
+                    <div id="active-nodes">Loading...</div>
+                </section>
+            </div>
+            
+            <section class="log-panel">
+                <h2>System Log</h2>
+                <div id="system-log"></div>
             </section>
         </main>
     </div>
-    <script src="/static/script.js"></script>
 </body>
 </html>

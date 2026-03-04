@@ -1,41 +1,57 @@
-﻿// Финальная версия с реальными данными
+// Global state
+let systemLog = [];
+let refreshInterval = null;
+
+// Initialize on page load
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('Jarvis UI initialized');
-    
-    // Загружаем данные при загрузке
     updateStatusBar();
     loadPageData();
     
-    // Обновляем статус каждые 5 секунд
-    setInterval(updateStatusBar, 5000);
+    // Start periodic updates
+    refreshInterval = setInterval(updateStatusBar, 5000);
     
-    // Командная форма
+    // Command form handler
     const commandForm = document.getElementById('command-form');
     if (commandForm) {
         commandForm.addEventListener('submit', async function(e) {
             e.preventDefault();
             const command = document.getElementById('command-input').value;
             const mode = document.getElementById('mode-select').value;
-            
-            const output = document.getElementById('command-output');
-            output.textContent = 'Executing...';
-            
-            try {
-                const response = await fetch('/api/execute', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({command, mode})
-                });
-                const result = await response.json();
-                output.textContent = JSON.stringify(result, null, 2);
-            } catch (err) {
-                output.textContent = 'Error: ' + err.message;
-            }
+            await executeCommand(command, mode);
+        });
+    }
+    
+    // Task form handler
+    const taskForm = document.getElementById('task-form');
+    if (taskForm) {
+        taskForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const command = document.getElementById('task-command').value;
+            const type = document.getElementById('task-type').value;
+            const interval = document.getElementById('task-interval').value;
+            await scheduleTask(command, type, interval);
+        });
+    }
+    
+    // Compile form handler
+    const compileForm = document.getElementById('compile-form');
+    if (compileForm) {
+        compileForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const command = document.getElementById('compile-command').value;
+            await compileCommand(command);
         });
     }
 });
 
-// Загрузка данных в зависимости от страницы
+// Cleanup on page unload
+window.addEventListener('beforeunload', function() {
+    if (refreshInterval) {
+        clearInterval(refreshInterval);
+    }
+});
+
+// Load data based on current page
 function loadPageData() {
     const path = window.location.pathname;
     
@@ -52,133 +68,265 @@ function loadPageData() {
     }
 }
 
-// Обновление статус-бара
+// Update status bar
 async function updateStatusBar() {
     try {
         // Nodes count
         const nodesRes = await fetch('/api/nodes');
         const nodesData = await nodesRes.json();
-        document.getElementById('node-count').textContent = 'Nodes: ' + (nodesData.count || 0);
+        document.getElementById('node-count').textContent = Nodes: ${nodesData.count};
         
         // Cache stats
         const cacheRes = await fetch('/api/cache/stats');
         const cacheData = await cacheRes.json();
-        const hitRate = ((cacheData.hit_rate || 0) * 100).toFixed(1);
-        document.getElementById('cache-status').textContent = 'Cache: ' + (cacheData.size || 0) + ' entries (' + hitRate + '% hits)';
+        document.getElementById('cache-status').textContent = Cache: ${cacheData.size || 0} entries (${(cacheData.hit_rate * 100 || 0).toFixed(1)}% hits);
         
+        // Distributed stats
+        const distRes = await fetch('/api/distributed/stats');
+        const distData = await distRes.json();
+        document.getElementById('distributed-status').textContent = Distributed: ${distData.running ? 'Active' : 'Inactive'};
     } catch (err) {
         console.error('Status update error:', err);
     }
 }
 
-// Загрузка данных для Dashboard
-async function loadDashboardData() {
+// Execute command
+async function executeCommand(command, mode) {
+    const outputDiv = document.getElementById('command-output');
+    outputDiv.textContent = 'Executing...';
+    
     try {
-        const statsDiv = document.getElementById('system-stats');
-        if (!statsDiv) return;
-        
-        // Получаем статус
-        const statusRes = await fetch('/api/status');
-        const statusData = await statusRes.json();
-        
-        // Получаем память
-        const memoryRes = await fetch('/api/memory');
-        const memoryData = await memoryRes.json();
-        
-        let experiencesCount = 0;
-        let bestSequencesCount = 0;
-        let patternsCount = 0;
-        
-        if (memoryData.experiences) experiencesCount = memoryData.experiences.length;
-        if (memoryData.best_sequences) bestSequencesCount = Object.keys(memoryData.best_sequences).length;
-        if (memoryData.patterns) patternsCount = Object.keys(memoryData.patterns).length;
-        
-        statsDiv.innerHTML = `
-            <p><strong>Version:</strong> ${statusData.version}</p>
-            <p><strong>Core:</strong> ✅ Active</p>
-            <p><strong>Experiences:</strong> ${experiencesCount}</p>
-            <p><strong>Best Sequences:</strong> ${bestSequencesCount}</p>
-            <p><strong>Patterns:</strong> ${patternsCount}</p>
-        `;
+        const response = await fetch('/api/execute', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({command, mode})
+        });
+        const result = await response.json();
+        outputDiv.textContent = JSON.stringify(result, null, 2);
+        addLogEntry(Executed: ${command} (${mode}));
     } catch (err) {
-        console.error('Dashboard load error:', err);
-        document.getElementById('system-stats').innerHTML = '<p style="color:red">Error loading data: ' + err.message + '</p>';
+        outputDiv.textContent = Error: ${err.message};
     }
 }
 
-// Загрузка данных для Memory
+// Schedule task
+async function scheduleTask(command, type, interval) {
+    alert('Task scheduling coming soon!');
+}
+
+// Compile command
+async function compileCommand(command) {
+    alert('Compiler coming soon!');
+}
+
+// Load memory data
 async function loadMemoryData() {
     try {
         const response = await fetch('/api/memory');
         const data = await response.json();
         
-        const contentDiv = document.getElementById('memory-content');
-        if (contentDiv) {
-            contentDiv.innerHTML = '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+        // Update stats
+        const statsDiv = document.getElementById('memory-stats');
+        statsDiv.innerHTML = 
+            <p>Total experiences: ${data.experiences?.length || 0}</p>
+            <p>Best sequences: ${Object.keys(data.best_sequences || {}).length}</p>
+            <p>Patterns: ${Object.keys(data.patterns || {}).length}</p>
+        ;
+        
+        // Update table
+        const tbody = document.getElementById('memory-body');
+        if (tbody) {
+            tbody.innerHTML = '';
+            const experiences = data.experiences || [];
+            experiences.slice(-10).reverse().forEach(exp => {
+                const row = tbody.insertRow();
+                row.innerHTML = 
+                    <td>${new Date(exp.timestamp).toLocaleString()}</td>
+                    <td>${exp.command || ''}</td>
+                    <td>${exp.avgr?.intent?.type || ''}</td>
+                    <td>${exp.syvgr?.symptom?.status || ''}</td>
+                    <td>${exp.syvgr?.symptom?.deviation || 0}</td>
+                    <td><button onclick="viewExperience('${exp.timestamp}')">View</button></td>
+                ;
+            });
+        }
+        
+        // Update best sequences
+        const bestDiv = document.getElementById('best-sequences');
+        if (bestDiv) {
+            bestDiv.innerHTML = '<pre>' + JSON.stringify(data.best_sequences || {}, null, 2) + '</pre>';
         }
     } catch (err) {
         console.error('Memory load error:', err);
     }
 }
 
-// Загрузка данных для Nodes
+// Load nodes data
 async function loadNodesData() {
     try {
         const response = await fetch('/api/nodes');
         const data = await response.json();
         
-        const contentDiv = document.getElementById('memory-content');
-        if (contentDiv) {
-            if (data.count === 0) {
-                contentDiv.innerHTML = '<p>No active nodes found. Start discovery with --distributed flag.</p>';
-            } else {
-                contentDiv.innerHTML = '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
-            }
+        const tbody = document.getElementById('nodes-body');
+        if (tbody) {
+            tbody.innerHTML = '';
+            Object.entries(data.nodes || {}).forEach(([nodeId, info]) => {
+                const row = tbody.insertRow();
+                const lastSeen = new Date(info.last_seen * 1000).toLocaleString();
+                row.innerHTML = 
+                    <td>${nodeId}</td>
+                    <td>${info.address}</td>
+                    <td>${lastSeen}</td>
+                    <td>${Object.keys(info.capabilities || {}).join(', ')}</td>
+                    <td>0</td>
+                ;
+            });
         }
+        
+        // Load distributed stats
+        const distRes = await fetch('/api/distributed/stats');
+        const distData = await distRes.json();
+        document.getElementById('distributed-stats').innerHTML = 
+            <p>Node ID: ${distData.node_id}</p>
+            <p>Status: ${distData.running ? 'Running' : 'Stopped'}</p>
+            <p>Active tasks: ${Object.keys(distData.node_tasks || {}).length}</p>
+        ;
     } catch (err) {
         console.error('Nodes load error:', err);
     }
 }
 
-// Загрузка данных для Tasks
+// Load tasks data
 async function loadTasksData() {
     try {
         const response = await fetch('/api/scheduler/tasks');
         const data = await response.json();
         
-        const contentDiv = document.getElementById('memory-content');
-        if (contentDiv) {
-            if (!data.tasks || data.tasks.length === 0) {
-                contentDiv.innerHTML = '<p>No scheduled tasks.</p>';
-            } else {
-                contentDiv.innerHTML = '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
-            }
+        const tbody = document.getElementById('tasks-body');
+        if (tbody) {
+            tbody.innerHTML = '';
+            (data.tasks || []).forEach(task => {
+                const row = tbody.insertRow();
+                const nextRun = new Date(task.time * 1000).toLocaleString();
+                row.innerHTML = 
+                    <td>${task.id}</td>
+                    <td>${task.command}</td>
+                    <td>${nextRun}</td>
+                    <td>recurring</td>
+                    <td><button onclick="cancelTask('${task.id}')">Cancel</button></td>
+                ;
+            });
         }
     } catch (err) {
         console.error('Tasks load error:', err);
     }
 }
 
-// Загрузка данных для Compiler
+// Load compiler data
 async function loadCompilerData() {
     try {
         const response = await fetch('/api/cache/stats');
         const data = await response.json();
         
-        const contentDiv = document.getElementById('memory-content');
-        if (contentDiv) {
-            const hitRate = ((data.hit_rate || 0) * 100).toFixed(2);
-            contentDiv.innerHTML = `
-                <h3>Cache Statistics</h3>
-                <table border="1" cellpadding="5">
-                    <tr><td>Hits:</td><td>${data.hits || 0}</td></tr>
-                    <tr><td>Misses:</td><td>${data.misses || 0}</td></tr>
-                    <tr><td>Hit Rate:</td><td>${hitRate}%</td></tr>
-                    <tr><td>Cache Size:</td><td>${data.size || 0} entries</td></tr>
-                </table>
-            `;
-        }
+        document.getElementById('cache-stats').innerHTML = 
+            <p>Hits: ${data.hits || 0}</p>
+            <p>Misses: ${data.misses || 0}</p>
+            <p>Hit rate: ${(data.hit_rate * 100 || 0).toFixed(2)}%</p>
+            <p>Cache size: ${data.size || 0} entries</p>
+        ;
     } catch (err) {
         console.error('Compiler load error:', err);
     }
+}
+
+// Load dashboard data
+async function loadDashboardData() {
+    try {
+        // System stats
+        const memoryRes = await fetch('/api/memory');
+        const memoryData = await memoryRes.json();
+        
+        document.getElementById('system-stats').innerHTML = 
+            <p>Experiences: ${memoryData.experiences?.length || 0}</p>
+            <p>Best sequences: ${Object.keys(memoryData.best_sequences || {}).length}</p>
+            <p>Patterns: ${Object.keys(memoryData.patterns || {}).length}</p>
+        ;
+        
+        // Recent tasks
+        const tasksRes = await fetch('/api/scheduler/tasks');
+        const tasksData = await tasksRes.json();
+        
+        const recentTasks = document.getElementById('recent-tasks');
+        recentTasks.innerHTML = <p>${(tasksData.tasks || []).length} tasks scheduled</p>;
+        
+        // Active nodes
+        const nodesRes = await fetch('/api/nodes');
+        const nodesData = await nodesRes.json();
+        
+        const activeNodes = document.getElementById('active-nodes');
+        activeNodes.innerHTML = <p>${nodesData.count} nodes active</p>;
+        
+        // Add a sample log entry
+        addLogEntry('Dashboard loaded');
+    } catch (err) {
+        console.error('Dashboard load error:', err);
+    }
+}
+
+// Add log entry
+function addLogEntry(message) {
+    const logDiv = document.getElementById('system-log');
+    if (!logDiv) return;
+    
+    const timestamp = new Date().toLocaleTimeString();
+    const entry = document.createElement('div');
+    entry.className = 'log-entry';
+    entry.innerHTML = <span class="log-time">[${timestamp}]</span> ${message};
+    logDiv.appendChild(entry);
+    logDiv.scrollTop = logDiv.scrollHeight;
+}
+
+// Node discovery
+async function discoverNodes() {
+    try {
+        const response = await fetch('/api/nodes');
+        const data = await response.json();
+        addLogEntry(Discovered ${data.count} nodes);
+        loadNodesData();
+    } catch (err) {
+        console.error('Discovery error:', err);
+    }
+}
+
+// Distributed mode controls
+async function startDistributed() {
+    alert('Starting distributed mode...');
+    // Will be implemented
+}
+
+async function stopDistributed() {
+    alert('Stopping distributed mode...');
+    // Will be implemented
+}
+
+// Memory controls
+async function refreshMemory() {
+    await loadMemoryData();
+    addLogEntry('Memory refreshed');
+}
+
+async function clearMemory() {
+    if (confirm('Clear all memory? This cannot be undone.')) {
+        addLogEntry('Memory cleared');
+    }
+}
+
+// View experience details
+function viewExperience(timestamp) {
+    alert(Viewing experience from ${timestamp});
+}
+
+// Cancel task
+function cancelTask(taskId) {
+    alert(Cancelling task ${taskId});
 }

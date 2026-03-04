@@ -1,17 +1,17 @@
-﻿* {
+* {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
 }
 
 body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
     background: #f5f5f5;
     color: #333;
 }
 
 .container {
-    max-width: 1200px;
+    max-width: 1400px;
     margin: 0 auto;
     padding: 20px;
 }
@@ -22,6 +22,21 @@ header {
     padding: 20px;
     border-radius: 10px;
     margin-bottom: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.status-bar {
+    display: flex;
+    gap: 20px;
+    font-size: 14px;
+}
+
+.status-bar span {
+    background: rgba(255,255,255,0.2);
+    padding: 5px 10px;
+    border-radius: 5px;
 }
 
 nav {
@@ -29,6 +44,9 @@ nav {
     padding: 10px;
     border-radius: 10px;
     margin-bottom: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    display: flex;
+    gap: 10px;
 }
 
 nav a {
@@ -36,6 +54,11 @@ nav a {
     text-decoration: none;
     color: #666;
     border-radius: 5px;
+    transition: all 0.3s;
+}
+
+nav a:hover {
+    background: #f0f0f0;
 }
 
 nav a.active {
@@ -47,16 +70,30 @@ main {
     background: white;
     padding: 20px;
     border-radius: 10px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+section {
+    margin-bottom: 30px;
+}
+
+h2 {
+    margin-bottom: 15px;
+    color: #444;
+    border-bottom: 2px solid #f0f0f0;
+    padding-bottom: 10px;
 }
 
 .command-panel {
-    margin-bottom: 20px;
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 8px;
 }
 
 #command-form {
     display: flex;
     gap: 10px;
-    margin: 10px 0;
+    margin-bottom: 15px;
 }
 
 #command-input {
@@ -64,6 +101,14 @@ main {
     padding: 10px;
     border: 1px solid #ddd;
     border-radius: 5px;
+    font-size: 16px;
+}
+
+#mode-select {
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    background: white;
 }
 
 button {
@@ -73,6 +118,17 @@ button {
     border: none;
     border-radius: 5px;
     cursor: pointer;
+    font-size: 16px;
+    transition: background 0.3s;
+}
+
+button:hover {
+    background: #5a67d8;
+}
+
+button:disabled {
+    background: #ccc;
+    cursor: not-allowed;
 }
 
 #command-output {
@@ -81,5 +137,143 @@ button {
     padding: 15px;
     border-radius: 5px;
     font-family: monospace;
-    min-height: 100px;
+    white-space: pre-wrap;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.stats-card {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.stats-card h3 {
+    margin-bottom: 10px;
+    color: #555;
+}
+
+.log-panel {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 8px;
+}
+
+#system-log {
+    background: #2d3748;
+    color: #a0aec0;
+    padding: 15px;
+    border-radius: 5px;
+    font-family: monospace;
+    height: 200px;
+    overflow-y: auto;
+}
+
+.log-entry {
+    margin-bottom: 5px;
+    border-bottom: 1px solid #4a5568;
+    padding-bottom: 5px;
+}
+
+.log-time {
+    color: #68d391;
+    margin-right: 10px;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+th, td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+th {
+    background: #f7fafc;
+    font-weight: 600;
+    color: #4a5568;
+}
+
+tr:hover {
+    background: #f7fafc;
+}
+
+.memory-controls, .node-controls, .task-controls, .compiler-controls {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 8px;
+}
+
+#memory-search {
+    flex: 1;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+}
+
+#task-form {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+#task-command {
+    flex: 2;
+    min-width: 300px;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+}
+
+#task-type, #task-interval {
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+}
+
+#bytecode-output {
+    background: #2d3748;
+    color: #a0aec0;
+    padding: 15px;
+    border-radius: 5px;
+    font-family: monospace;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+@media (max-width: 768px) {
+    .container {
+        padding: 10px;
+    }
+    
+    header {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    #command-form {
+        flex-direction: column;
+    }
+    
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    nav {
+        flex-wrap: wrap;
+    }
 }
